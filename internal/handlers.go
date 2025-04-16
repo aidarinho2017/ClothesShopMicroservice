@@ -2,114 +2,63 @@ package internal
 
 import (
 	"awesomeProject2/models"
-	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type ItemHandler struct {
-	service *ItemService
+	Service *ItemService
 }
 
 func NewItemHandler(service *ItemService) *ItemHandler {
-	return &ItemHandler{service: service}
+	return &ItemHandler{Service: service}
 }
 
-func (h *ItemHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
+func (h *ItemHandler) CreateItem(c *gin.Context) {
 	var item models.Item
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&item); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	if err := h.service.CreateItem(r.Context(), &item); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.Service.CreateItem(c, &item); err != nil {
+		log.Printf("❌ Error creating item: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item"})
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
+	c.JSON(http.StatusCreated, item)
 }
 
-func (h *ItemHandler) GetItems(w http.ResponseWriter, r *http.Request) {
-	shopID, err := strconv.Atoi(chi.URLParam(r, "shopId"))
+func (h *ItemHandler) GetItemByID(c *gin.Context) {
+	id := c.Param("id")
+	item, err := h.Service.GetItemByID(c, id)
 	if err != nil {
-		http.Error(w, "Invalid shop ID", http.StatusBadRequest)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return
 	}
-
-	sortBy := r.URL.Query().Get("sort")
-	var items []models.Item
-	var getErr error
-
-	switch sortBy {
-	case "category":
-		items, getErr = h.service.GetItemsSortedByCategory(r.Context(), shopID)
-	case "size":
-		items, getErr = h.service.GetItemsSortedBySize(r.Context(), shopID)
-	case "brand":
-		items, getErr = h.service.GetItemsSortedByBrand(r.Context(), shopID)
-	case "price_asc":
-		items, getErr = h.service.GetItemsSortedByPrice(r.Context(), shopID, true)
-	case "price_desc":
-		items, getErr = h.service.GetItemsSortedByPrice(r.Context(), shopID, false)
-	default:
-		items, getErr = h.service.GetItemsForShop(r.Context(), shopID)
-	}
-
-	if getErr != nil {
-		http.Error(w, getErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	c.JSON(http.StatusOK, item)
 }
 
-func (h *ItemHandler) GetItem(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		http.Error(w, "Invalid item ID", http.StatusBadRequest)
-		return
-	}
-
-	item, err := h.service.GetItemByID(r.Context(), id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(item)
-}
-
-func (h *ItemHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+func (h *ItemHandler) UpdateItem(c *gin.Context) {
 	var item models.Item
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	id := c.Param("id")
+	if err := c.ShouldBindJSON(&item); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	if err := h.service.UpdateItem(r.Context(), item); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	item.ID = id
+	if err := h.Service.UpdateItem(c, &item); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item"})
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, item)
 }
 
-func (h *ItemHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		http.Error(w, "Invalid item ID", http.StatusBadRequest)
+func (h *ItemHandler) DeleteItem(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.Service.DeleteItem(c, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
 		return
 	}
-
-	if err := h.service.DeleteItem(r.Context(), id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
