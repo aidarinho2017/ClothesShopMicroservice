@@ -13,13 +13,9 @@ type Item struct {
 	BoughtFor int       `json:"bought_for" db:"bought_for"`
 	Sex       string    `json:"sex" db:"sex"`
 	Photo     Photo     `json:"photo" db:"photo"`
-	Barcode   Barcode   `json:"barcode" db:"barcode"`
+	QRCode    string    `json:"qr_code" db:"qr_code"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-}
-
-type Barcode struct {
-	Code string `json:"code" db:"code"`
 }
 
 type Photo struct {
