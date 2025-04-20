@@ -1,4 +1,4 @@
-package internal
+package repository
 
 import (
 	"awesomeProject2/internal/db"
@@ -38,6 +38,22 @@ func (r *ItemRepository) GetByID(id string) (*models.Item, error) {
 
 	query := `SELECT id, name, brand, category, size, color, price, bought_for, sex, photo, qr_code, created_at, updated_at FROM items WHERE id=$1`
 	row := r.DB.Conn.QueryRow(ctx, query, id)
+
+	var item models.Item
+	err := row.Scan(&item.ID, &item.Name, &item.Brand, &item.Category, &item.Size, &item.Color,
+		&item.Price, &item.BoughtFor, &item.Sex, &item.Photo.Photo, &item.QRCode, &item.CreatedAt, &item.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *ItemRepository) GetByQRCode(qrCodeData string) (*models.Item, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `SELECT id, name, brand, category, size, color, price, bought_for, sex, photo, qr_code, created_at, updated_at FROM items WHERE qr_code LIKE $1`
+	row := r.DB.Conn.QueryRow(ctx, query, fmt.Sprintf("data:image/png;base64,%s", qrCodeData))
 
 	var item models.Item
 	err := row.Scan(&item.ID, &item.Name, &item.Brand, &item.Category, &item.Size, &item.Color,
