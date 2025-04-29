@@ -1,6 +1,7 @@
-package internal
+package handlers
 
 import (
+	"awesomeProject2/internal/service"
 	"awesomeProject2/models"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -8,10 +9,10 @@ import (
 )
 
 type ItemHandler struct {
-	Service *ItemService
+	Service *service.ItemService
 }
 
-func NewItemHandler(service *ItemService) *ItemHandler {
+func NewItemHandler(service *service.ItemService) *ItemHandler {
 	return &ItemHandler{Service: service}
 }
 

@@ -1,4 +1,4 @@
-package internal
+package repository
 
 import (
 	"awesomeProject2/internal/db"

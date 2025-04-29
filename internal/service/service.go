@@ -1,6 +1,7 @@
-package internal
+package service
 
 import (
+	"awesomeProject2/internal/repository"
 	"awesomeProject2/models"
 	"context"
 	"encoding/base64"
@@ -12,10 +13,10 @@ import (
 )
 
 type ItemService struct {
-	repo ItemRepository
+	repo repository.ItemRepository
 }
 
-func NewItemService(repo ItemRepository) *ItemService {
+func NewItemService(repo repository.ItemRepository) *ItemService {
 	return &ItemService{repo: repo}
 }
 
