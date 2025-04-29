@@ -29,5 +29,3 @@ func (db *DB) Close() {
 	db.Conn.Close(context.Background())
 	fmt.Println("connection closed")
 }
-
-const DATABASE_URL = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
