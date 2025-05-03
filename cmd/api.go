@@ -45,8 +45,7 @@ func Connect() {
 	r.GET("/items/:id", handler.GetItemByID)
 	r.PUT("/items/:id", handler.UpdateItem)
 	r.DELETE("/items/:id", handler.DeleteItem)
-	r.GET("/items/qr", handler.GetItemByQRCode)        // To identify items by QR code data
-	r.GET("/items/:id/qrcode", handler.DownloadQRCode) // To download the QR code as a picture
+	// To download the QR code as a picture
 
 	// Serve Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

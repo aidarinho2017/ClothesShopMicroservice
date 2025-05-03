@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Item struct {
-	ID        string    `json:"id" db:"id"`
+	ID        int       `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`
 	Brand     string    `json:"brand" db:"brand"`
 	Category  string    `json:"category" db:"category"`

@@ -5,6 +5,7 @@ import (
 	"awesomeProject2/models"
 	"context"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -20,16 +21,21 @@ func (r *ItemRepository) Create(item *models.Item) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	query := `INSERT INTO items (id, name, brand, category, size, color, price, bought_for, sex, photo, qr_code, created_at, updated_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
-	_, err := r.DB.Conn.Exec(ctx, query,
-		item.ID, item.Name, item.Brand, item.Category, item.Size, item.Color,
-		item.Price, item.BoughtFor, item.Sex, item.Photo.Photo, item.QRCode, time.Now(), time.Now(),
-	)
+	query := `INSERT INTO items (name, brand, category, size, color, price, bought_for, sex, photo, qr_code, created_at, updated_at)
+              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+              RETURNING id`
+
+	err := r.DB.Conn.QueryRow(ctx, query,
+		item.Name, item.Brand, item.Category, item.Size, item.Color,
+		item.Price, item.BoughtFor, item.Sex, item.Photo.Photo, item.QRCode,
+		item.CreatedAt, item.UpdatedAt,
+	).Scan(&item.ID) // Assign auto-generated ID back to the item
+
 	if err != nil {
-		fmt.Printf("❌ DB Insert Error: %v\n", err)
+		log.Printf("❌ DB Insert Error: %v\n", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func (r *ItemRepository) GetByID(id string) (*models.Item, error) {
@@ -46,6 +52,37 @@ func (r *ItemRepository) GetByID(id string) (*models.Item, error) {
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (r *ItemRepository) GetItems() ([]*models.Item, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `SELECT id, name, brand, category, size, color, price, bought_for, sex, photo, qr_code, created_at, updated_at FROM items`
+
+	rows, err := r.DB.Conn.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*models.Item
+
+	for rows.Next() {
+		var item models.Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Brand, &item.Category, &item.Size, &item.Color,
+			&item.Price, &item.BoughtFor, &item.Sex, &item.Photo.Photo, &item.QRCode, &item.CreatedAt, &item.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, &item)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
 
 func (r *ItemRepository) GetByQRCode(qrCodeData string) (*models.Item, error) {
